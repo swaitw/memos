@@ -1,73 +1,45 @@
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { locationService } from "../services";
-import { useAppSelector } from "../store";
-import { memoSpecialTypes } from "../helpers/filter";
-import Icon from "./Icon";
-import "../less/search-bar.less";
+import { SearchIcon } from "lucide-react";
+import { useState } from "react";
+import { useMemoFilterStore } from "@/store/v1";
+import { useTranslate } from "@/utils/i18n";
+import MemoDisplaySettingMenu from "./MemoDisplaySettingMenu";
 
 const SearchBar = () => {
-  const { t } = useTranslation();
-  const memoType = useAppSelector((state) => state.location.query?.type);
+  const t = useTranslate();
+  const memoFilterStore = useMemoFilterStore();
   const [queryText, setQueryText] = useState("");
 
-  useEffect(() => {
-    const text = locationService.getState().query.text;
-    setQueryText(text === undefined ? "" : text);
-  }, [locationService.getState().query.text]);
-
-  const handleMemoTypeItemClick = (type: MemoSpecType | undefined) => {
-    const { type: prevType } = locationService.getState().query ?? {};
-    if (type === prevType) {
-      type = undefined;
-    }
-    locationService.setMemoTypeQuery(type);
+  const onTextChange = (event: React.FormEvent<HTMLInputElement>) => {
+    setQueryText(event.currentTarget.value);
   };
 
-  const handleTextQueryInput = (event: React.FormEvent<HTMLInputElement>) => {
-    const text = event.currentTarget.value;
-    setQueryText(text);
-    locationService.setTextQuery(text.length === 0 ? undefined : text);
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (queryText !== "") {
+        const words = queryText.split(" ");
+        words.forEach((word) => {
+          memoFilterStore.addFilter({
+            factor: "contentSearch",
+            value: word,
+          });
+        });
+        setQueryText("");
+      }
+    }
   };
 
   return (
-    <div className="search-bar-container">
-      <div className="search-bar-inputer">
-        <Icon.Search className="icon-img" />
-        <input
-          className="text-input"
-          autoComplete="new-password"
-          type="text"
-          placeholder=""
-          value={queryText}
-          onChange={handleTextQueryInput}
-        />
-      </div>
-      <div className="quickly-action-wrapper">
-        <div className="quickly-action-container">
-          <p className="title-text">{t("search.quickly-filter").toUpperCase()}</p>
-          <div className="section-container types-container">
-            <span className="section-text">{t("common.type").toUpperCase()}:</span>
-            <div className="values-container">
-              {memoSpecialTypes.map((type, idx) => {
-                return (
-                  <div key={type.value}>
-                    <span
-                      className={`type-item ${memoType === type.value ? "selected" : ""}`}
-                      onClick={() => {
-                        handleMemoTypeItemClick(type.value as MemoSpecType);
-                      }}
-                    >
-                      {t(type.text)}
-                    </span>
-                    {idx + 1 < memoSpecialTypes.length ? <span className="split-text">/</span> : null}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="relative w-full h-auto flex flex-row justify-start items-center">
+      <SearchIcon className="absolute left-3 w-4 h-auto opacity-40" />
+      <input
+        className="w-full text-gray-500 dark:text-gray-400 bg-zinc-50 dark:bg-zinc-900 border dark:border-zinc-800 text-sm leading-7 rounded-lg p-1 pl-8 outline-none"
+        placeholder={t("memo.search-placeholder")}
+        value={queryText}
+        onChange={onTextChange}
+        onKeyDown={onKeyDown}
+      />
+      <MemoDisplaySettingMenu className="absolute right-3 top-3" />
     </div>
   );
 };

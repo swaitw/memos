@@ -1,48 +1,49 @@
 import { Option, Select } from "@mui/joy";
-import { useTranslation } from "react-i18next";
-import { globalService, userService } from "../services";
-import { useAppSelector } from "../store";
-import Icon from "./Icon";
+import { SunIcon, MoonIcon, SmileIcon } from "lucide-react";
+import { FC } from "react";
+import { useTranslate } from "@/utils/i18n";
 
-const appearanceList = ["system", "light", "dark"];
+interface Props {
+  value: Appearance;
+  onChange: (appearance: Appearance) => void;
+  className?: string;
+}
 
-const AppearanceSelect = () => {
-  const user = useAppSelector((state) => state.user.user);
-  const appearance = useAppSelector((state) => state.global.appearance);
-  const { t } = useTranslation();
+const appearanceList = ["system", "light", "dark"] as const;
 
-  const getPrefixIcon = (apperance: Appearance) => {
+const AppearanceSelect: FC<Props> = (props: Props) => {
+  const { onChange, value, className } = props;
+  const t = useTranslate();
+
+  const getPrefixIcon = (appearance: Appearance) => {
     const className = "w-4 h-auto";
-    if (apperance === "light") {
-      return <Icon.Sun className={className} />;
-    } else if (apperance === "dark") {
-      return <Icon.Moon className={className} />;
+    if (appearance === "light") {
+      return <SunIcon className={className} />;
+    } else if (appearance === "dark") {
+      return <MoonIcon className={className} />;
     } else {
-      return <Icon.Smile className={className} />;
+      return <SmileIcon className={className} />;
     }
   };
 
   const handleSelectChange = async (appearance: Appearance) => {
-    if (user) {
-      await userService.upsertUserSetting("appearance", appearance);
-    }
-    globalService.setAppearance(appearance);
+    onChange(appearance);
   };
 
   return (
     <Select
-      className="!min-w-[10rem] w-auto text-sm"
-      value={appearance}
+      className={`!min-w-[10rem] w-auto whitespace-nowrap ${className ?? ""}`}
+      value={value}
       onChange={(_, appearance) => {
         if (appearance) {
           handleSelectChange(appearance);
         }
       }}
-      startDecorator={getPrefixIcon(appearance)}
+      startDecorator={getPrefixIcon(value)}
     >
       {appearanceList.map((item) => (
         <Option key={item} value={item} className="whitespace-nowrap">
-          {t(`setting.apperance-option.${item}`)}
+          {t(`setting.appearance-option.${item}`)}
         </Option>
       ))}
     </Select>
